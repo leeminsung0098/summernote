@@ -45,7 +45,7 @@ public class SummerController {
 
         JsonObjectBuilder jsonObjectBuilder = Json.createObjectBuilder();
         System.out.println("originalFile" + originalFileName);
-        String fileRoot = "images/";	//저장될 외부 파일 경로
+        String fileRoot = "C:\\projects\\summernote\\src\\main\\resources\\static\\images\\";	//저장될 외부 파일 경로
 //        String originalFileName = multipartFile.getOriginalFilename();	//오리지날 파일명
 //        String extension = originalFileName.substring(originalFileName.lastIndexOf("."));	//파일 확장자
 
@@ -72,7 +72,7 @@ public class SummerController {
             dbRepository.save(entity);
 
             // url은 실제 서버의 저장된 장소를 보내야함
-            jsonObjectBuilder.add("url", "/summernoteImage/"+savedFileName);
+            jsonObjectBuilder.add("url", savedFileName);
             jsonObjectBuilder.add("responseCode", "success");
 
 //            return "redirect:/uploadSummernoteImageFile";
@@ -93,15 +93,7 @@ public class SummerController {
     // 저장된 url 을 불러오기
     @GetMapping("/getSummernoteImage/{url}")
     public String getSummernoteImageFile(@PathVariable("url") String url, Model model) {
-        String fileRoot = "file:///C:/summernote_image/"; // 파일이 저장된 외부 디렉토리 경로
-        Resource resource = resourceLoader.getResource(fileRoot + url);
-        System.out.println(resource.exists());
-        System.out.println(fileRoot + url);
-        model.addAttribute("imageUrl", resource);
-
+        model.addAttribute("imageUrl", "/images/" + url);
         return "img"; // 템플릿 이름 반환
     }
-
-
-
 }
