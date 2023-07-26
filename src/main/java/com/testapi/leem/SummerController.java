@@ -34,15 +34,18 @@ public class SummerController {
         return "summer_note_lite";
     }
 
-    @PostMapping(value="/uploadSummernoteImageFile", produces = "application/json")
+
+
+    @PostMapping(value="/uploadSummernoteImageFile")
     @ResponseBody
     public JsonObject uploadSummernoteImageFile(@RequestParam("file") MultipartFile multipartFile) {
+        System.out.println("multipartFile" + multipartFile.getOriginalFilename());
         String originalFileName = multipartFile.getOriginalFilename();
         String extension = "";
 
         JsonObjectBuilder jsonObjectBuilder = Json.createObjectBuilder();
-        System.out.println("조인");
-        String fileRoot = "C:\\summernote_image\\";	//저장될 외부 파일 경로
+        System.out.println("originalFile" + originalFileName);
+        String fileRoot = "images/";	//저장될 외부 파일 경로
 //        String originalFileName = multipartFile.getOriginalFilename();	//오리지날 파일명
 //        String extension = originalFileName.substring(originalFileName.lastIndexOf("."));	//파일 확장자
 
@@ -56,7 +59,7 @@ public class SummerController {
         File targetFile = new File(fileRoot + savedFileName);
 
         try {
-            System.out.println("트라이캐치문 트루 실행");
+            System.out.println("save image");
             InputStream fileStream = multipartFile.getInputStream();
             FileUtils.copyInputStreamToFile(fileStream, targetFile);
 
@@ -68,6 +71,7 @@ public class SummerController {
             entity.setUrl(savedFileName);
             dbRepository.save(entity);
 
+            // url은 실제 서버의 저장된 장소를 보내야함
             jsonObjectBuilder.add("url", "/summernoteImage/"+savedFileName);
             jsonObjectBuilder.add("responseCode", "success");
 
@@ -89,15 +93,11 @@ public class SummerController {
     // 저장된 url 을 불러오기
     @GetMapping("/getSummernoteImage/{url}")
     public String getSummernoteImageFile(@PathVariable("url") String url, Model model) {
-        String fileRoot = "file:C:/summernote_image/"; // 파일이 저장된 외부 디렉토리 경로
+        String fileRoot = "file:///C:/summernote_image/"; // 파일이 저장된 외부 디렉토리 경로
         Resource resource = resourceLoader.getResource(fileRoot + url);
-        System.out.println("저장 위치 정보 :" + resource);
-
-        if (resource.exists()) {
-            model.addAttribute("imageUrl", "/img?url=" + url);
-        } else {
-            model.addAttribute("imageUrl", ""); // 파일이 존재하지 않는 경우 빈 문자열로 처리
-        }
+        System.out.println(resource.exists());
+        System.out.println(fileRoot + url);
+        model.addAttribute("imageUrl", resource);
 
         return "img"; // 템플릿 이름 반환
     }
