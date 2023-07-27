@@ -13,27 +13,4 @@ import java.util.UUID;
 @org.springframework.stereotype.Service
 public class Service {
 
-//    @Value("${file.upload.dir}")
-//    private String fileRoot;
-//
-//    public JsonObject summerNoteImageFile(MultipartFile file) {
-//        JsonObject jsonObject = new JsonObject();
-//        String originalFileName = file.getOriginalFilename();
-//        String extension = Objects.requireNonNull(originalFileName).substring(originalFileName.lastIndexOf("."));
-//
-//        String saveFileName = UUID.randomUUID() + extension;
-//
-//        File targetFile = new File(fileRoot + saveFileName);
-//
-//        try {
-//            InputStream fileStream = file.getInputStream();
-//            FileUtils.copyInputStreamToFile(fileStream, targetFile);
-//            jsonObject.addProperty("url", "/summernoteImg/" + saveFileName);
-//            jsonObject.addProperty("responseCode", "success");
-//        } catch (IOException e) {
-//            jsonObject.addProperty("responseCode", "error");
-//            e.printStackTrace();
-//        }
-//        return jsonObject;
-//    }
 }

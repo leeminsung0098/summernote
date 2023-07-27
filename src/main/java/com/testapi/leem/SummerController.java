@@ -35,7 +35,7 @@ public class SummerController {
     }
 
 
-
+   //섬머노트 이미지 저장
     @PostMapping(value="/uploadSummernoteImageFile")
     @ResponseBody
     public JsonObject uploadSummernoteImageFile(@RequestParam("file") MultipartFile multipartFile) {
@@ -45,7 +45,7 @@ public class SummerController {
 
         JsonObjectBuilder jsonObjectBuilder = Json.createObjectBuilder();
         System.out.println("originalFile" + originalFileName);
-        String fileRoot = "C:\\projects\\summernote\\src\\main\\resources\\static\\images\\";	//저장될 외부 파일 경로
+        String fileRoot = "src\\main\\resources\\static\\images\\";	//저장될 외부 파일 경로
 //        String originalFileName = multipartFile.getOriginalFilename();	//오리지날 파일명
 //        String extension = originalFileName.substring(originalFileName.lastIndexOf("."));	//파일 확장자
 
@@ -88,6 +88,7 @@ public class SummerController {
         return jsonObject;
     }
     // 끝 ---------------------
+
 
 
     // 저장된 url 을 불러오기
