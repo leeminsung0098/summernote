@@ -14,7 +14,7 @@
 </form>
 <script>
     $('#summernote').summernote({
-        placeholder: 'Hello stand alone ui',
+        placeholder: '게시물 작성 칸.',
         tabsize: 2,
         height: 120,
         toolbar: [
@@ -27,8 +27,11 @@
             ['view', ['fullscreen', 'codeview', 'help']]
         ],
         callbacks: {
-            onImageUpload : function(files) {
-                uploadSummernoteImageFile(files[0],this);
+            onImageUpload: function (files) {
+                var $editor = $(this);
+                for (var i = 0; i < files.length; i++) {
+                    uploadAndInsertImage(files[i], $editor);
+                }
             },
             onPaste: function (e) {
                 var clipboardData = e.originalEvent.clipboardData;
@@ -36,32 +39,55 @@
                     var item = clipboardData.items[0];
                     if (item.kind === 'file' && item.type.indexOf('image/') !== -1) {
                         e.preventDefault();
+                        uploadAndInsertImage(item.getAsFile(), $(this));
                     }
                 }
             }
         }
     });
 
-	/**
-	* 이미지 파일 업로드
-	*/
-	function uploadSummernoteImageFile(file, editor) {
-		data = new FormData();
-		data.append("file", file);
-		$.ajax({
-			data : data,
-			type : "POST",
-			url : "/uploadSummernoteImageFile",
-			contentType : false,
-			processData : false,
-			success : function(data) {
-            	//항상 업로드된 파일의 url이 있어야 한다.
-				console.log(data);
+    /**
+     * 이미지 파일 업로드 후 에디터에 삽입
+     */
+    function uploadAndInsertImage(file, $editor) {
+    console.log('uploadAndInsertImage 함수 호출됨');
+    var data = new FormData();
+    data.append("file", file);
+    $.ajax({
+        data: data,
+        type: "POST",
+        url: "/uploadSummernoteImageFile",
+        contentType: false,
+        processData: false,
+        success: function (response) {
+            var imageUrl = response.imageUrl;
+            console.log('이미지 URL:', imageUrl);
 
-			}
-		});
-	}
+            // GET 요청으로 이미지를 받아오는 부분입니다.
+            $.ajax({
+                type: "GET",
+                url: "/getImage?imageName=" + imageUrl,
+                xhrFields: {
+                    responseType: 'blob' // 이미지를 받아오기 위해 responseType을 'blob'으로 설정합니다.
+                },
+                success: function (data) {
+                    var reader = new FileReader();
+                    reader.onloadend = function () {
+                        var base64data = reader.result;
+                        $editor.summernote('insertImage', base64data);
+                    };
+                    reader.readAsDataURL(data);
+                },
+                error: function () {
+                    alert('이미지를 불러오는데 실패했습니다.');
+                }
+            });
+        },
+        error: function () {
+            alert('이미지 업로드에 실패했습니다.');
+        }
+    });
+}
 </script>
 </body>
-
 </html>

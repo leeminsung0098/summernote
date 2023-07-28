@@ -5,6 +5,7 @@ import jakarta.json.JsonObject;
 import jakarta.json.JsonObjectBuilder;
 import org.apache.commons.io.FileUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.ResourceLoader;
 import org.springframework.core.io.UrlResource;
@@ -18,83 +19,85 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.MalformedURLException;
+import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.UUID;
 
 @Controller
 public class SummerController {
-
-    //섬머노트 api 페이지 불러오기및 저장
-    @Autowired
-    private DbRepository dbRepository;
-    @Autowired
-    private ResourceLoader resourceLoader;
-    @GetMapping("uploadSummernoteImageFile")
-    public String ac(){
+    @GetMapping("/getSummernoteImage")
+    public String getSummernoteImageFile() {
         return "summer_note_lite";
     }
 
+    @Value("${upload.path}") //저장위치 설정. properties에서 가져온다.
+    private String fileUploadPath;
 
-   //섬머노트 이미지 저장
-    @PostMapping(value="/uploadSummernoteImageFile")
+    @PostMapping("/uploadSummernoteImageFile")
     @ResponseBody
-    public JsonObject uploadSummernoteImageFile(@RequestParam("file") MultipartFile multipartFile) {
-        System.out.println("multipartFile" + multipartFile.getOriginalFilename());
-        String originalFileName = multipartFile.getOriginalFilename();
-        String extension = "";
-
-        JsonObjectBuilder jsonObjectBuilder = Json.createObjectBuilder();
-        System.out.println("originalFile" + originalFileName);
-        String fileRoot = "src\\main\\resources\\static\\images\\";	//저장될 외부 파일 경로
-//        String originalFileName = multipartFile.getOriginalFilename();	//오리지날 파일명
-//        String extension = originalFileName.substring(originalFileName.lastIndexOf("."));	//파일 확장자
-
-        //파일 확장자가 있을경우 실행
-        if (originalFileName != null && originalFileName.contains(".")) {
-            extension = originalFileName.substring(originalFileName.lastIndexOf("."));
+    public ResponseEntity<?> uploadSummernoteImageFile(@RequestParam("file") MultipartFile multipartFile) {
+        if (multipartFile.isEmpty()) {
+            return ResponseEntity.badRequest().body("업로드할 파일을 선택해주세요.");
         }
 
-        String savedFileName = UUID.randomUUID() + extension;	//저장될 파일 명
-        
-        File targetFile = new File(fileRoot + savedFileName);
+        String originalFileName = multipartFile.getOriginalFilename();
+        String extension = originalFileName.substring(originalFileName.lastIndexOf("."));
+
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMddHHmmss");
+        String savedFileName = sdf.format(new Date()) + extension;
+
+        File targetFile = new File(fileUploadPath + savedFileName);
+        System.out.println("저장위치 : " + targetFile);
 
         try {
-            System.out.println("save image");
-            InputStream fileStream = multipartFile.getInputStream();
-            FileUtils.copyInputStreamToFile(fileStream, targetFile);
+            System.out.println("성공 ");
+            multipartFile.transferTo(targetFile);
+            String imageUrl = "/summerimages/" + savedFileName;
 
-            // db 엔티티 생성 및 저장
-            Db entity = new Db();
-            entity.setSubject("Sample Subject");
-            entity.setContent("Sample Content");
-            entity.setRegDate(new Date());
-            entity.setUrl(savedFileName);
-            dbRepository.save(entity);
+            JsonObjectBuilder responseJson = Json.createObjectBuilder();
+            responseJson.add("imageUrl", imageUrl);
 
-            // url은 실제 서버의 저장된 장소를 보내야함
-            jsonObjectBuilder.add("url", savedFileName);
-            jsonObjectBuilder.add("responseCode", "success");
-
-//            return "redirect:/uploadSummernoteImageFile";
-
+            return ResponseEntity.ok(responseJson.build());
         } catch (IOException e) {
-            System.out.println("트라이캐치문 팔즈 실행");
-            FileUtils.deleteQuietly(targetFile);
-            jsonObjectBuilder.add("responseCode", "error");
+            System.out.println("실패 ");
             e.printStackTrace();
+            return ResponseEntity.status(500).body("이미지 업로드에 실패하였습니다.");
         }
-
-        JsonObject jsonObject = jsonObjectBuilder.build();
-        return jsonObject;
     }
-    // 끝 ---------------------
 
+    @GetMapping("/getImage")
+    @ResponseBody
+    public ResponseEntity<Resource> uploadAndInsertImage(@RequestParam("imageName") String imageName) {
+        System.out.println("이미지 불러오기 실행");
+        try {
+            System.out.println("이미지 파일 읽기 시작");
+            // 이미지가 저장된 경로에서 이미지 파일을 읽어옵니다.
+            Resource resource = new UrlResource("file:" + fileUploadPath + imageName);
 
-
-    // 저장된 url 을 불러오기
-    @GetMapping("/getSummernoteImage/{url}")
-    public String getSummernoteImageFile(@PathVariable("url") String url, Model model) {
-        model.addAttribute("imageUrl", "/images/" + url);
-        return "img"; // 템플릿 이름 반환
+            if (resource.exists()) {
+                System.out.println("이미지 리소스 반환 시작");
+                // 이미지가 존재하면 해당 리소스를 반환합니다.
+                return ResponseEntity.ok(resource);
+            } else {
+                System.out.println("이미지 존재 하지않아 404 반환");
+                // 이미지가 존재하지 않으면 404 Not Found 상태를 반환합니다.
+                return ResponseEntity.notFound().build();
+            }
+        } catch (MalformedURLException e) {
+            System.out.println("이미지 파일 읽기 실패,");
+            e.printStackTrace();
+            return ResponseEntity.status(500).build();
+        }
     }
+
+
+    @GetMapping("img/{20230728153334.jpg}")
+    public String imgcheck(@RequestParam(name = "imageUrl", required = false)String imageUrl){
+
+        return "img";
+    }
+
 }
+        // 끝 ---------------------
+
+
